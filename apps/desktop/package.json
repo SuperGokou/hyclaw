@@ -1,0 +1,28 @@
+{
+  "name": "@hyclaw/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HYClaw desktop shell (EFD)",
+  "author": "EFD 和熠光显",
+  "type": "module",
+  "main": "dist/main.js",
+  "dependencies": {
+    "@hyclaw/hyshield": "workspace:*"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @hyclaw/hyshield exec tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm run build && electron .",
+    "test": "vitest run",
+    "pack:dir": "pnpm run build && node scripts/pack.mjs",
+    "security-smoke": "node scripts/security-smoke.mjs",
+    "pack:installer": "pnpm run build && node scripts/pack.mjs --installer"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.0.0"
+  }
+}

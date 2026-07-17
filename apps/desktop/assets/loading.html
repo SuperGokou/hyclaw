@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>HYClaw · 和熠智脑</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; height: 100vh; display: grid; place-items: center;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: light-dark(#fafafa, #1b1b1f); color: light-dark(#26262a, #e4e4e8);
+  }
+  .card { text-align: center; }
+  .card img { width: 96px; height: 96px; }
+  h1 { font-size: 1.4rem; margin: 16px 0 4px; }
+  p { margin: 4px 0; color: light-dark(#6b6b73, #9a9aa4); }
+  .spinner {
+    width: 28px; height: 28px; margin: 20px auto 0; border-radius: 50%;
+    border: 3px solid light-dark(#d9d9df, #3a3a42); border-top-color: #c8281e;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .failed .spinner { display: none; }
+  .failed-only { display: none; }
+  .failed .failed-only { display: block; }
+  .failed .loading-only { display: none; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <img src="icon-256.png" alt="EFD HYClaw" />
+  <h1>HYClaw · 和熠智脑</h1>
+  <p class="loading-only">正在启动本地智能体网关… / Starting local gateway…</p>
+  <p class="failed-only">网关启动失败,请查看日志后重启应用。<br />Gateway failed to start. Check logs and restart.</p>
+  <div class="spinner"></div>
+</div>
+<script>
+  if (new URLSearchParams(location.search).get("state") === "failed") {
+    document.getElementById("card").classList.add("failed");
+  }
+</script>
+</body>
+</html>

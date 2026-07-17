@@ -1,0 +1,15 @@
+{
+  "name": "@hyclaw/branding",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-icons.mjs",
+    "verify": "node scripts/verify-icons.mjs"
+  },
+  "devDependencies": {
+    "decode-ico": "^0.4.1",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.34.0"
+  }
+}

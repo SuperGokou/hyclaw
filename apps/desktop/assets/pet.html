@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>HYPet</title>
+<style>
+  html, body {
+    margin: 0; width: 100%; height: 100%; overflow: hidden;
+    background: transparent; user-select: none; cursor: grab;
+    font-family: "Segoe UI","Microsoft YaHei",sans-serif;
+  }
+  body { -webkit-app-region: drag; }
+  #wrap {
+    position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #bubble {
+    -webkit-app-region: no-drag;
+    max-width: 220px; margin-bottom: 6px; padding: 9px 12px;
+    background: #fff; color: #26262a; border-radius: 12px; font-size: 13px;
+    line-height: 1.45; box-shadow: 0 6px 18px rgba(0,0,0,.28);
+    border: 1px solid #eee; opacity: 0; transform: translateY(6px);
+    transition: opacity .2s ease, transform .2s ease; pointer-events: none;
+    position: relative;
+  }
+  #bubble.show { opacity: 1; transform: translateY(0); }
+  #bubble::after {
+    content: ""; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%);
+    border: 7px solid transparent; border-top-color: #fff;
+  }
+  #goku {
+    width: 104px; height: 104px; object-fit: contain;
+    filter: drop-shadow(0 6px 9px rgba(0,0,0,.35));
+    animation: bob 3.2s ease-in-out infinite;
+    -webkit-app-region: drag;
+  }
+  #goku.excited { animation: excited .5s ease-in-out; }
+  @keyframes bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-6px) } }
+  @keyframes excited { 0%,100%{ transform: translateY(0) scale(1) } 40%{ transform: translateY(-14px) scale(1.06) } }
+  @media (prefers-reduced-motion: reduce){ #goku{ animation:none } }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="bubble"></div>
+  <img id="goku" src="goku.png" alt="HYPet" draggable="false" />
+</div>
+<script>
+  const bubble = document.getElementById("bubble");
+  const goku = document.getElementById("goku");
+  let hideTimer = null;
+
+  function showBubble(text, { speak = false, ms = 6000 } = {}) {
+    bubble.textContent = text;
+    bubble.classList.add("show");
+    goku.classList.remove("excited"); void goku.offsetWidth; goku.classList.add("excited");
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => bubble.classList.remove("show"), ms);
+    if (speak && window.speechSynthesis) {
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = /[一-龥]/.test(text) ? "zh-CN" : "en-US";
+        u.rate = 1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+      } catch {}
+    }
+  }
+
+  // Main process pushes messages; renderer renders + optionally speaks.
+  window.hypet?.onMessage((payload) => showBubble(payload.text, payload));
+
+  // Single click on Goku = open the main app; the bubble area never drags.
+  goku.addEventListener("click", () => window.hypet?.activateMain());
+  document.addEventListener("contextmenu", (e) => { e.preventDefault(); window.hypet?.menu(); });
+</script>
+</body>
+</html>

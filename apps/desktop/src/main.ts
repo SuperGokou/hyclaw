@@ -1,9 +1,10 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { appendAudit, assertLoopbackBind } from "@hyclaw/hyshield";
-import { BrowserWindow, app, ipcMain } from "electron";
+import { BrowserWindow, app, globalShortcut, ipcMain } from "electron";
 import { ensureGatewayBootstrap, resolveGatewayConfig } from "./gateway-config.js";
 import { GatewayManager, waitForGateway } from "./gateway-manager.js";
+import { PetWindow } from "./pet-window.js";
 import { createSafeStorageBackend } from "./safe-storage-backend.js";
 import { createTray } from "./tray.js";
 import { CredentialVault, providerEnvVar } from "./vault.js";
@@ -83,11 +84,40 @@ if (!app.requestSingleInstanceLock()) {
       );
     };
 
-    createTray({
+    // HYPet 桌面伴侣:悬浮桌宠(悟空),可从托盘开关。
+    const pet = new PetWindow({
+      onActivateMain: showWindow,
+      onMenu: () => tray.popUpContextMenu(),
+    });
+    const petStatePath = path.join(config.stateDir, "pet-enabled");
+    const petEnabledInitially = existsSync(petStatePath);
+    const persistPet = (on: boolean) => {
+      try {
+        if (on) writeFileSync(petStatePath, "1");
+        else rmSync(petStatePath, { force: true });
+      } catch {
+        // 状态持久化失败不影响功能
+      }
+    };
+    const togglePet = () => {
+      const on = pet.toggle();
+      persistPet(on);
+      if (on) pet.say({ text: "我在这儿!有事叫我。", speak: false });
+      return on;
+    };
+
+    ipcMain.on("hypet:activate-main", () => pet.handleActivateMain());
+    ipcMain.on("hypet:menu", () => pet.handleMenu());
+
+    const tray = createTray({
       onShow: showWindow,
       onCredentials: openCredentials,
+      onTogglePet: togglePet,
       onQuit: () => app.quit(),
     });
+
+    // 全局热键:Ctrl+Alt+H 开关桌宠。
+    globalShortcut.register("CommandOrControl+Alt+H", togglePet);
 
     ipcMain.handle("hyclaw:vault:meta", () => ({
       vaultPath: config.vaultPath,
@@ -149,9 +179,16 @@ if (!app.requestSingleInstanceLock()) {
     );
 
     appendAudit(config.auditDir, "gateway.start", { port: String(config.port) }, now());
+    if (petEnabledInitially) {
+      pet.show();
+    }
+
     manager.start();
     await waitForGateway(config.url, { timeoutMs: GATEWAY_READY_TIMEOUT_MS });
     await mainWindow.loadURL(`${config.url}?token=${encodeURIComponent(token)}`);
+    if (pet.isOpen()) {
+      pet.say({ text: "HYClaw 准备好了,开始干活吧!", speak: false });
+    }
   };
 
   app.whenReady().then(() => {
@@ -165,6 +202,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on("before-quit", () => {
     quitting = true;
+    globalShortcut.unregisterAll();
     manager?.stop();
   });
 

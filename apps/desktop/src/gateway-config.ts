@@ -58,6 +58,7 @@ interface GatewayFileConfig {
     [key: string]: unknown;
   };
   browser?: { enabled?: boolean; [key: string]: unknown };
+  agents?: { list?: Array<{ id?: string; name?: string; [key: string]: unknown }>; [key: string]: unknown };
   [key: string]: unknown;
 }
 
@@ -96,6 +97,13 @@ export function ensureGatewayBootstrap(config: GatewayConfig): { token: string }
   // office user never asked for). Users can opt back in by setting browser.enabled.
   const browser = (fileConfig.browser ??= {});
   browser.enabled ??= false;
+  // HYClaw default: a configured "main" agent so its name/avatar can be
+  // personalized from the UI (agents.update requires an explicit entry).
+  const agents = (fileConfig.agents ??= {});
+  agents.list ??= [];
+  if (!agents.list.some((entry) => entry?.id === "main")) {
+    agents.list.push({ id: "main", name: "HYClaw 助手" });
+  }
   writeFileSync(config.configPath, `${JSON.stringify(fileConfig, null, 2)}\n`);
   return { token: auth.token };
 }
